@@ -25,5 +25,3 @@ Como parte del equipo de Ingeniería en Informática, lideré las siguientes ár
 * `/Base_de_Datos`: Scripts de creación de tablas, relaciones y datos semilla.
 * `/Imagenes`: Modelos de la arquitectura relacional y diagramas E-R.
 
-## 📸 Arquitectura y Modelos
-*(Nota: Añade aquí las imágenes PNG de tu diagrama relacional de Workbench y tus diagramas BPMN de Ventas y Abastecimiento que rescataste).*
