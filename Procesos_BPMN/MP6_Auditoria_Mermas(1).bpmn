@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.48.0">
+  <bpmn:collaboration id="Collaboration_Auditoria">
+    <bpmn:participant id="Participant_Auditoria" name="TrendNova: Auditoría de Inventario (Doble Factor)" processRef="Proceso_Auditoria" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_Auditoria" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_ERP" name="Sistema ERP / WMS">
+        <bpmn:flowNodeRef>Event_Start_Audit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Generar_Lista</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Comparar_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Dif_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Comparar_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_End_Ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Dif_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Actualizar_BD</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_End_Ajuste</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Gravedad</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Bodega" name="Operario de Bodega">
+        <bpmn:flowNodeRef>Task_Contar_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Contar_2</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Supervisor" name="Supervisor de Bodega">
+        <bpmn:flowNodeRef>Task_Aprobar_Menor</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Finanzas" name="Subgerente Finanzas">
+        <bpmn:flowNodeRef>Event_End_Rechazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Autorizar_Mayor</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Event_Start_Audit" name="Día 1 del Mes">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:timerEventDefinition />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_Generar_Lista" name="Generar Lista de Conteo">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_Contar_1" name="Primer Conteo Físico">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Event_End_Rechazo" name="Rechazado por Finanzas" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Event_Start_Audit" targetRef="Task_Generar_Lista" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Generar_Lista" targetRef="Task_Contar_1" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Contar_1" targetRef="Task_Comparar_1" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Comparar_1" targetRef="Gateway_Dif_1" />
+    <bpmn:sequenceFlow id="Flow_NO_Dif_1" name="No" sourceRef="Gateway_Dif_1" targetRef="Event_End_Ok" />
+    <bpmn:sequenceFlow id="Flow_YES_Dif_1" name="Sí" sourceRef="Gateway_Dif_1" targetRef="Gateway_Gravedad" />
+    <bpmn:sequenceFlow id="Flow_Menor" name="No (Menor)" sourceRef="Gateway_Gravedad" targetRef="Task_Aprobar_Menor" />
+    <bpmn:sequenceFlow id="Flow_Mayor" name="Sí (Crítico)" sourceRef="Gateway_Gravedad" targetRef="Task_Contar_2" />
+    <bpmn:sequenceFlow id="Flow_To_Update_1" sourceRef="Task_Aprobar_Menor" targetRef="Task_Actualizar_BD" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Contar_2" targetRef="Task_Comparar_2" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_Comparar_2" targetRef="Gateway_Dif_2" />
+    <bpmn:sequenceFlow id="Flow_NO_Dif_2" name="No (Falso Positivo)" sourceRef="Gateway_Dif_2" targetRef="Event_End_Ok" />
+    <bpmn:sequenceFlow id="Flow_YES_Dif_2" name="Sí" sourceRef="Gateway_Dif_2" targetRef="Task_Autorizar_Mayor" />
+    <bpmn:sequenceFlow id="Flow_To_Update_2" sourceRef="Task_Autorizar_Mayor" targetRef="Task_Actualizar_BD" />
+    <bpmn:sequenceFlow id="Flow_Final" sourceRef="Task_Actualizar_BD" targetRef="Event_End_Ajuste" />
+    <bpmn:serviceTask id="Task_Comparar_1" name="Comparar Físico vs Lógico">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:property id="Property_0369lej" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_05dq7kw">
+        <bpmn:sourceRef>DataStoreReference_1dtwtj2</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0369lej</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_Dif_2" name="¿Persiste Diferencia?">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_NO_Dif_2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_YES_Dif_2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Aprobar_Menor" name="Justificar Merma Menor">
+      <bpmn:incoming>Flow_Menor</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Update_1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_Contar_2" name="Segundo Conteo (Auditoría)">
+      <bpmn:incoming>Flow_Mayor</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_Comparar_2" name="Re-evaluar Diferencia">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_End_Ok" name="Auditoría Cuadrada">
+      <bpmn:incoming>Flow_NO_Dif_1</bpmn:incoming>
+      <bpmn:incoming>Flow_NO_Dif_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_Dif_1" name="¿Hay Diferencia?">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_NO_Dif_1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_YES_Dif_1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:dataStoreReference id="DataStoreReference_1dtwtj2" name="Inventario" />
+    <bpmn:serviceTask id="Task_Actualizar_BD" name="Registrar Merma y Sincronizar">
+      <bpmn:incoming>Flow_To_Update_1</bpmn:incoming>
+      <bpmn:incoming>Flow_To_Update_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Final</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1k9qb5e">
+        <bpmn:targetRef>DataStoreReference_04jmhpk</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_Autorizar_Mayor" name="Autorizar Ajuste Financiero (Pérdida)">
+      <bpmn:incoming>Flow_YES_Dif_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Update_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Event_End_Ajuste" name="Inventario Actualizado">
+      <bpmn:incoming>Flow_Final</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:dataStoreReference id="DataStoreReference_04jmhpk" name="Auditoria_Inventario" />
+    <bpmn:exclusiveGateway id="Gateway_Gravedad" name="¿Desvío Mayor al 5%?">
+      <bpmn:incoming>Flow_YES_Dif_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Menor</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Mayor</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Auditoria">
+      <bpmndi:BPMNShape id="Participant_Auditoria_di" bpmnElement="Participant_Auditoria" isHorizontal="true">
+        <dc:Bounds x="160" y="60" width="1600" height="540" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Finanzas_di" bpmnElement="Lane_Finanzas" isHorizontal="true">
+        <dc:Bounds x="190" y="470" width="1570" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Supervisor_di" bpmnElement="Lane_Supervisor" isHorizontal="true">
+        <dc:Bounds x="190" y="350" width="1570" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Bodega_di" bpmnElement="Lane_Bodega" isHorizontal="true">
+        <dc:Bounds x="190" y="230" width="1570" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ERP_di" bpmnElement="Lane_ERP" isHorizontal="true">
+        <dc:Bounds x="190" y="60" width="1570" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Start_Audit_di" bpmnElement="Event_Start_Audit">
+        <dc:Bounds x="230" y="130" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Generar_Lista_di" bpmnElement="Task_Generar_Lista">
+        <dc:Bounds x="320" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Contar_1_di" bpmnElement="Task_Contar_1">
+        <dc:Bounds x="320" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Comparar_1_di" bpmnElement="Task_Comparar_1">
+        <dc:Bounds x="450" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Dif_2_di" bpmnElement="Gateway_Dif_2" isMarkerVisible="true">
+        <dc:Bounds x="1325" y="123" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1322" y="173" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Aprobar_Menor_di" bpmnElement="Task_Aprobar_Menor">
+        <dc:Bounds x="1120" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Contar_2_di" bpmnElement="Task_Contar_2">
+        <dc:Bounds x="1120" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Comparar_2_di" bpmnElement="Task_Comparar_2">
+        <dc:Bounds x="1120" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_Ok_di" bpmnElement="Event_End_Ok">
+        <dc:Bounds x="832" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="826" y="128" width="49" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Dif_1_di" bpmnElement="Gateway_Dif_1" isMarkerVisible="true">
+        <dc:Bounds x="705" y="155" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="687" y="215" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1dtwtj2_di" bpmnElement="DataStoreReference_1dtwtj2">
+        <dc:Bounds x="595" y="85" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="596" y="142" width="49" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Actualizar_BD_di" bpmnElement="Task_Actualizar_BD">
+        <dc:Bounds x="1460" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Autorizar_Mayor_di" bpmnElement="Task_Autorizar_Mayor">
+        <dc:Bounds x="1460" y="500" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_Ajuste_di" bpmnElement="Event_End_Ajuste">
+        <dc:Bounds x="1682" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1672" y="197" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_04jmhpk_di" bpmnElement="DataStoreReference_04jmhpk">
+        <dc:Bounds x="1615" y="65" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1588" y="122" width="103" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Gravedad_di" bpmnElement="Gateway_Gravedad" isMarkerVisible="true">
+        <dc:Bounds x="935" y="155" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="916" y="125.5" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="266" y="148" />
+        <di:waypoint x="320" y="148" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="370" y="188" />
+        <di:waypoint x="370" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="420" y="290" />
+        <di:waypoint x="500" y="290" />
+        <di:waypoint x="500" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="550" y="180" />
+        <di:waypoint x="705" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NO_Dif_1_di" bpmnElement="Flow_NO_Dif_1">
+        <di:waypoint x="730" y="155" />
+        <di:waypoint x="730" y="100" />
+        <di:waypoint x="832" y="100" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="706" y="126" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_YES_Dif_1_di" bpmnElement="Flow_YES_Dif_1">
+        <di:waypoint x="755" y="180" />
+        <di:waypoint x="935" y="180" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="845" y="155" width="11" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Menor_di" bpmnElement="Flow_Menor">
+        <di:waypoint x="960" y="205" />
+        <di:waypoint x="960" y="410" />
+        <di:waypoint x="1120" y="410" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="902" y="299" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Mayor_di" bpmnElement="Flow_Mayor">
+        <di:waypoint x="985" y="180" />
+        <di:waypoint x="1080" y="180" />
+        <di:waypoint x="1080" y="280" />
+        <di:waypoint x="1120" y="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1003" y="193" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Update_1_di" bpmnElement="Flow_To_Update_1">
+        <di:waypoint x="1220" y="410" />
+        <di:waypoint x="1480" y="410" />
+        <di:waypoint x="1480" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="1170" y="250" />
+        <di:waypoint x="1170" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="1220" y="148" />
+        <di:waypoint x="1325" y="148" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NO_Dif_2_di" bpmnElement="Flow_NO_Dif_2">
+        <di:waypoint x="1350" y="120" />
+        <di:waypoint x="1350" y="100" />
+        <di:waypoint x="868" y="100" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1019" y="83" width="101" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_YES_Dif_2_di" bpmnElement="Flow_YES_Dif_2">
+        <di:waypoint x="1375" y="148" />
+        <di:waypoint x="1420" y="148" />
+        <di:waypoint x="1420" y="540" />
+        <di:waypoint x="1460" y="540" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1404" y="293" width="11" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Update_2_di" bpmnElement="Flow_To_Update_2">
+        <di:waypoint x="1530" y="500" />
+        <di:waypoint x="1530" y="188" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Final_di" bpmnElement="Flow_Final">
+        <di:waypoint x="1560" y="170" />
+        <di:waypoint x="1682" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_05dq7kw_di" bpmnElement="DataInputAssociation_05dq7kw">
+        <di:waypoint x="590" y="130" />
+        <di:waypoint x="550" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1k9qb5e_di" bpmnElement="DataOutputAssociation_1k9qb5e">
+        <di:waypoint x="1510" y="108" />
+        <di:waypoint x="1510" y="85" />
+        <di:waypoint x="1615" y="85" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

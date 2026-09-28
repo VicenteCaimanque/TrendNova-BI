@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.48.0">
+  <bpmn:collaboration id="Collaboration_ETL">
+    <bpmn:participant id="Participant_ETL" name="TrendNova: Pipeline Analítico y BI" processRef="Proceso_ETL" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_ETL" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_Cron" name="Orquestador (Cron)">
+        <bpmn:flowNodeRef>Event_Start_Timer</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_MotorETL" name="Motor ETL (Data Integration)">
+        <bpmn:flowNodeRef>Task_Transformar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Extraer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Cargar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_PowerBI" name="Servidor Power BI">
+        <bpmn:flowNodeRef>Event_End_BI</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Refrescar_PBI</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Event_Start_Timer" targetRef="Task_Extraer" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Extraer" targetRef="Task_Transformar" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Transformar" targetRef="Task_Cargar" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Cargar" targetRef="Task_Refrescar_PBI" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Refrescar_PBI" targetRef="Event_End_BI" />
+    <bpmn:startEvent id="Event_Start_Timer" name="03:00 AM">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:timerEventDefinition />
+    </bpmn:startEvent>
+    <bpmn:endEvent id="Event_End_BI" name="Dashboard Actualizado">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_Refrescar_PBI" name="Actualizar Modelos DAX">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="Task_Transformar" name="Limpiar y Normalizar Datos">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:serviceTask id="Task_Extraer" name="Extraer Datos Transaccionales">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:property id="Property_0jrrnhl" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_02icf3g">
+        <bpmn:sourceRef>DataStoreReference_0ln4fd9</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0jrrnhl</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_Cargar" name="Cargar Data Warehouse">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:dataStoreReference id="DataStoreReference_0ln4fd9" name="MySQL_OLTP" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_ETL">
+      <bpmndi:BPMNShape id="Participant_ETL_di" bpmnElement="Participant_ETL" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1000" height="420" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_PowerBI_di" bpmnElement="Lane_PowerBI" isHorizontal="true">
+        <dc:Bounds x="190" y="360" width="970" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_MotorETL_di" bpmnElement="Lane_MotorETL" isHorizontal="true">
+        <dc:Bounds x="190" y="220" width="970" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Cron_di" bpmnElement="Lane_Cron" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="970" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Start_Timer_di" bpmnElement="Event_Start_Timer">
+        <dc:Bounds x="272" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="266" y="118" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_BI_di" bpmnElement="Event_End_BI">
+        <dc:Bounds x="1052" y="412" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1042" y="456" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Refrescar_PBI_di" bpmnElement="Task_Refrescar_PBI">
+        <dc:Bounds x="870" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Transformar_di" bpmnElement="Task_Transformar">
+        <dc:Bounds x="670" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Extraer_di" bpmnElement="Task_Extraer">
+        <dc:Bounds x="320" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Cargar_di" bpmnElement="Task_Cargar">
+        <dc:Bounds x="870" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_0ln4fd9_di" bpmnElement="DataStoreReference_0ln4fd9">
+        <dc:Bounds x="525" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="515" y="292" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="290" y="178" />
+        <di:waypoint x="290" y="300" />
+        <di:waypoint x="320" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="420" y="320" />
+        <di:waypoint x="670" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="770" y="300" />
+        <di:waypoint x="870" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="920" y="340" />
+        <di:waypoint x="920" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="970" y="430" />
+        <di:waypoint x="1052" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_02icf3g_di" bpmnElement="DataInputAssociation_02icf3g">
+        <di:waypoint x="520" y="270" />
+        <di:waypoint x="420" y="270" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.48.0">
+  <bpmn:collaboration id="Collaboration_LogisticaInversa">
+    <bpmn:participant id="Participant_Logistica" name="TrendNova: Logística Inversa y Reembolsos" processRef="Proceso_Logistica" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_Logistica" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_Cliente" name="Cliente">
+        <bpmn:flowNodeRef>Event_End_Rechazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_Start_Ticket</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_End_Exito</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Portal" name="Portal Digital Postventa">
+        <bpmn:flowNodeRef>Task_Validar_Plazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Notificar_Rechazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Generar_Etiqueta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Enviar_Etiqueta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Calcular_Monto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Actualizar_BD</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Enviar_NC</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Ejecutivo" name="Ejecutivo de Servicio al Cliente">
+        <bpmn:flowNodeRef>Task_Evaluar_Evidencia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Aprobado</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Bodega" name="Analista Control Calidad">
+        <bpmn:flowNodeRef>Event_Wait_Bulto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Inspeccion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Estado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Registrar_Merma</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Reingresar_Stock</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Pasarela" name="Pasarela Financiera">
+        <bpmn:flowNodeRef>Task_Procesar_Reembolso</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:endEvent id="Event_End_Rechazo" name="Ticket Cerrado">
+      <bpmn:incoming>Flow_Rechazo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Event_Start_Ticket" targetRef="Task_Validar_Plazo" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Validar_Plazo" targetRef="Task_Evaluar_Evidencia" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Evaluar_Evidencia" targetRef="Gateway_Aprobado" />
+    <bpmn:sequenceFlow id="Flow_NO" name="Rechazado" sourceRef="Gateway_Aprobado" targetRef="Task_Notificar_Rechazo" />
+    <bpmn:sequenceFlow id="Flow_Rechazo" sourceRef="Task_Notificar_Rechazo" targetRef="Event_End_Rechazo" />
+    <bpmn:sequenceFlow id="Flow_YES" name="Aprobado" sourceRef="Gateway_Aprobado" targetRef="Task_Generar_Etiqueta" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Generar_Etiqueta" targetRef="Task_Enviar_Etiqueta" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Enviar_Etiqueta" targetRef="Event_Wait_Bulto" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Event_Wait_Bulto" targetRef="Task_Inspeccion" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_Inspeccion" targetRef="Gateway_Estado" />
+    <bpmn:sequenceFlow id="Flow_APTO" name="Apto Venta" sourceRef="Gateway_Estado" targetRef="Task_Reingresar_Stock" />
+    <bpmn:sequenceFlow id="Flow_MERMA" name="Falla Fábrica" sourceRef="Gateway_Estado" targetRef="Task_Registrar_Merma" />
+    <bpmn:sequenceFlow id="Flow_APTO_Conv" sourceRef="Task_Reingresar_Stock" targetRef="Task_Calcular_Monto" />
+    <bpmn:sequenceFlow id="Flow_MERMA_Conv" sourceRef="Task_Registrar_Merma" targetRef="Task_Calcular_Monto" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_Calcular_Monto" targetRef="Task_Procesar_Reembolso" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Task_Procesar_Reembolso" targetRef="Task_Actualizar_BD" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Task_Actualizar_BD" targetRef="Task_Enviar_NC" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_Enviar_NC" targetRef="Event_End_Exito" />
+    <bpmn:startEvent id="Event_Start_Ticket" name="Ingresa Reclamo">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_Validar_Plazo" name="Validar Plazo y Elegibilidad">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:property id="Property_1ob6qk1" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_18tzn2z">
+        <bpmn:sourceRef>DataStoreReference_023fi3d</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1ob6qk1</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_Evaluar_Evidencia" name="Evaluar Evidencia Fotográfica">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_Aprobado" name="¿Ticket Válido?">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_NO</bpmn:outgoing>
+      <bpmn:outgoing>Flow_YES</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Task_Notificar_Rechazo" name="Notificar Rechazo Fundado">
+      <bpmn:incoming>Flow_NO</bpmn:incoming>
+      <bpmn:outgoing>Flow_Rechazo</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:scriptTask id="Task_Generar_Etiqueta" name="Generar Retorno Gratuito">
+      <bpmn:incoming>Flow_YES</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:sendTask id="Task_Enviar_Etiqueta" name="Enviar Etiqueta al Cliente">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:intermediateCatchEvent id="Event_Wait_Bulto" name="Esperar Arribo Físico">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+      <bpmn:messageEventDefinition />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="Task_Inspeccion" name="Inspección Física Textil">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_Estado" name="¿Diagnóstico?">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_APTO</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MERMA</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:manualTask id="Task_Registrar_Merma" name="Disponer para Destrucción">
+      <bpmn:incoming>Flow_MERMA</bpmn:incoming>
+      <bpmn:outgoing>Flow_MERMA_Conv</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:serviceTask id="Task_Reingresar_Stock" name="Re-ingresar a Rack Comercial">
+      <bpmn:incoming>Flow_APTO</bpmn:incoming>
+      <bpmn:outgoing>Flow_APTO_Conv</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_01ezk1p">
+        <bpmn:targetRef>DataStoreReference_0dmoaxr</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="Task_Calcular_Monto" name="Calcular Liquidación Neta">
+      <bpmn:incoming>Flow_APTO_Conv</bpmn:incoming>
+      <bpmn:incoming>Flow_MERMA_Conv</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:serviceTask id="Task_Actualizar_BD" name="Sincronizar Estado BD">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1j7vd3a">
+        <bpmn:targetRef>DataStoreReference_06r6sv5</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_Procesar_Reembolso" name="Reversar Fondos Bancarios">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:dataStoreReference id="DataStoreReference_023fi3d" name="Orden_Venta" />
+    <bpmn:dataStoreReference id="DataStoreReference_0dmoaxr" name="Inventario" />
+    <bpmn:sendTask id="Task_Enviar_NC" name="Emitir Nota de Crédito">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="Event_End_Exito" name="Reembolso Completado">
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:dataStoreReference id="DataStoreReference_06r6sv5" name="Orden_Venta" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_LogisticaInversa">
+      <bpmndi:BPMNShape id="Participant_Logistica_di" bpmnElement="Participant_Logistica" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1950" height="700" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Pasarela_di" bpmnElement="Lane_Pasarela" isHorizontal="true">
+        <dc:Bounds x="190" y="640" width="1920" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Bodega_di" bpmnElement="Lane_Bodega" isHorizontal="true">
+        <dc:Bounds x="190" y="480" width="1920" height="160" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Ejecutivo_di" bpmnElement="Lane_Ejecutivo" isHorizontal="true">
+        <dc:Bounds x="190" y="350" width="1920" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Portal_di" bpmnElement="Lane_Portal" isHorizontal="true">
+        <dc:Bounds x="190" y="200" width="1920" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Cliente_di" bpmnElement="Lane_Cliente" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1920" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_Rechazo_di" bpmnElement="Event_End_Rechazo">
+        <dc:Bounds x="850" y="120" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="832" y="163" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Start_Ticket_di" bpmnElement="Event_Start_Ticket">
+        <dc:Bounds x="292" y="120" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="268" y="96" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Validar_Plazo_di" bpmnElement="Task_Validar_Plazo">
+        <dc:Bounds x="260" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Evaluar_Evidencia_di" bpmnElement="Task_Evaluar_Evidencia">
+        <dc:Bounds x="260" y="375" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Aprobado_di" bpmnElement="Gateway_Aprobado" isMarkerVisible="true">
+        <dc:Bounds x="465" y="390" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="452" y="440" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Notificar_Rechazo_di" bpmnElement="Task_Notificar_Rechazo">
+        <dc:Bounds x="550" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Generar_Etiqueta_di" bpmnElement="Task_Generar_Etiqueta">
+        <dc:Bounds x="710" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Enviar_Etiqueta_di" bpmnElement="Task_Enviar_Etiqueta">
+        <dc:Bounds x="890" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Wait_Bulto_di" bpmnElement="Event_Wait_Bulto">
+        <dc:Bounds x="822" y="542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="805" y="578" width="71" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Inspeccion_di" bpmnElement="Task_Inspeccion">
+        <dc:Bounds x="920" y="520" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Estado_di" bpmnElement="Gateway_Estado" isMarkerVisible="true">
+        <dc:Bounds x="1075" y="545" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1065" y="603" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Registrar_Merma_di" bpmnElement="Task_Registrar_Merma">
+        <dc:Bounds x="1250" y="530" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Reingresar_Stock_di" bpmnElement="Task_Reingresar_Stock">
+        <dc:Bounds x="1410" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Calcular_Monto_di" bpmnElement="Task_Calcular_Monto">
+        <dc:Bounds x="1510" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Actualizar_BD_di" bpmnElement="Task_Actualizar_BD">
+        <dc:Bounds x="1700" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Procesar_Reembolso_di" bpmnElement="Task_Procesar_Reembolso">
+        <dc:Bounds x="1700" y="670" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_023fi3d_di" bpmnElement="DataStoreReference_023fi3d">
+        <dc:Bounds x="405" y="250" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="398" y="303" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_0dmoaxr_di" bpmnElement="DataStoreReference_0dmoaxr">
+        <dc:Bounds x="1565" y="505" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1566" y="562" width="49" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Enviar_NC_di" bpmnElement="Task_Enviar_NC">
+        <dc:Bounds x="1940" y="235" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_Exito_di" bpmnElement="Event_End_Exito">
+        <dc:Bounds x="1972" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1960" y="104.5" width="60" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_06r6sv5_di" bpmnElement="DataStoreReference_06r6sv5">
+        <dc:Bounds x="1845" y="215" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1838" y="272" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="310" y="156" />
+        <di:waypoint x="310" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="310" y="315" />
+        <di:waypoint x="310" y="375" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="360" y="415" />
+        <di:waypoint x="465" y="415" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NO_di" bpmnElement="Flow_NO">
+        <di:waypoint x="490" y="390" />
+        <di:waypoint x="490" y="275" />
+        <di:waypoint x="550" y="275" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="492" y="323" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Rechazo_di" bpmnElement="Flow_Rechazo">
+        <di:waypoint x="600" y="235" />
+        <di:waypoint x="600" y="140" />
+        <di:waypoint x="850" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_YES_di" bpmnElement="Flow_YES">
+        <di:waypoint x="515" y="415" />
+        <di:waypoint x="675" y="415" />
+        <di:waypoint x="675" y="275" />
+        <di:waypoint x="710" y="275" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="686" y="323" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="810" y="275" />
+        <di:waypoint x="890" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="940" y="315" />
+        <di:waypoint x="940" y="415" />
+        <di:waypoint x="840" y="415" />
+        <di:waypoint x="840" y="540" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="858" y="560" />
+        <di:waypoint x="920" y="560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1020" y="570" />
+        <di:waypoint x="1075" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_APTO_di" bpmnElement="Flow_APTO">
+        <di:waypoint x="1100" y="545" />
+        <di:waypoint x="1100" y="510" />
+        <di:waypoint x="1410" y="510" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1161" y="493" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MERMA_di" bpmnElement="Flow_MERMA">
+        <di:waypoint x="1125" y="570" />
+        <di:waypoint x="1250" y="570" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1156" y="552" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_APTO_Conv_di" bpmnElement="Flow_APTO_Conv">
+        <di:waypoint x="1460" y="490" />
+        <di:waypoint x="1460" y="300" />
+        <di:waypoint x="1510" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MERMA_Conv_di" bpmnElement="Flow_MERMA_Conv">
+        <di:waypoint x="1300" y="530" />
+        <di:waypoint x="1300" y="260" />
+        <di:waypoint x="1510" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1610" y="275" />
+        <di:waypoint x="1660" y="275" />
+        <di:waypoint x="1660" y="710" />
+        <di:waypoint x="1700" y="710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="1750" y="670" />
+        <di:waypoint x="1750" y="315" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="1800" y="300" />
+        <di:waypoint x="1940" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="1990" y="235" />
+        <di:waypoint x="1990" y="178" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_18tzn2z_di" bpmnElement="DataInputAssociation_18tzn2z">
+        <di:waypoint x="405" y="275" />
+        <di:waypoint x="360" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_01ezk1p_di" bpmnElement="DataOutputAssociation_01ezk1p">
+        <di:waypoint x="1510" y="530" />
+        <di:waypoint x="1565" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1j7vd3a_di" bpmnElement="DataOutputAssociation_1j7vd3a">
+        <di:waypoint x="1800" y="240" />
+        <di:waypoint x="1845" y="240" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

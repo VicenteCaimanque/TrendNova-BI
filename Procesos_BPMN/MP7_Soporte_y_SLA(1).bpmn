@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.48.0">
+  <bpmn:collaboration id="Collaboration_Tickets">
+    <bpmn:participant id="Participant_Tickets" name="TrendNova: Soporte Multicanal y Cumplimiento SLA" processRef="Proceso_Tickets" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_Tickets" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_Cliente" name="Cliente">
+        <bpmn:flowNodeRef>Event_Start_Ticket</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Encuesta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_End_Ticket</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_IA" name="Bot IA / Motor de Reglas">
+        <bpmn:flowNodeRef>Task_NLP</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Notificar_Cliente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Registrar_SLA</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Nivel</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Soporte" name="Ejecutivo Soporte (Nivel 1)">
+        <bpmn:flowNodeRef>Gateway_Escalar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Resolver_N1</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Finanzas" name="Especialista Fraude (Nivel 2)">
+        <bpmn:flowNodeRef>Task_Compensacion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Resolver_N2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_Timer_SLA</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Alerta_Gerencia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1d9qve4</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Event_Start_Ticket" name="Ingresa Queja">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_NLP" name="Análisis NLP y Clasificación de Riesgo">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_Encuesta" name="Completar CSAT (Encuesta)">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Event_Start_Ticket" targetRef="Task_NLP" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_NLP" targetRef="Gateway_Nivel" />
+    <bpmn:sequenceFlow id="Flow_N1" name="Baja/Media" sourceRef="Gateway_Nivel" targetRef="Task_Resolver_N1" />
+    <bpmn:sequenceFlow id="Flow_N2" name="Alta/Fraude" sourceRef="Gateway_Nivel" targetRef="Task_Resolver_N2" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Resolver_N1" targetRef="Gateway_Escalar" />
+    <bpmn:sequenceFlow id="Flow_Escala" name="No (Escalar)" sourceRef="Gateway_Escalar" targetRef="Task_Resolver_N2" />
+    <bpmn:sequenceFlow id="Flow_Resuelto_N1" name="Sí" sourceRef="Gateway_Escalar" targetRef="Task_Registrar_SLA" />
+    <bpmn:sequenceFlow id="Flow_Alerta" sourceRef="Event_Timer_SLA" targetRef="Task_Alerta_Gerencia" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Resolver_N2" targetRef="Task_Compensacion" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Compensacion" targetRef="Task_Registrar_SLA" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_Registrar_SLA" targetRef="Task_Notificar_Cliente" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_Notificar_Cliente" targetRef="Task_Encuesta" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_Encuesta" targetRef="Event_End_Ticket" />
+    <bpmn:endEvent id="Event_End_Ticket" name="Cierre Definitivo">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sendTask id="Task_Notificar_Cliente" name="Enviar Resolución">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:serviceTask id="Task_Registrar_SLA" name="Cerrar Ticket y Calcular SLA">
+      <bpmn:incoming>Flow_Resuelto_N1</bpmn:incoming>
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_0tpgr4w">
+        <bpmn:targetRef>DataStoreReference_0674tzp</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="Task_Compensacion" name="Emitir Cupón / Reembolso">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gateway_Escalar" name="¿Logra Resolver?">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_Escala</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Resuelto_N1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Resolver_N2" name="Investigar Caso Complejo">
+      <bpmn:incoming>Flow_N2</bpmn:incoming>
+      <bpmn:incoming>Flow_Escala</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:dataStoreReference id="DataStoreReference_0674tzp" name="Ticket_Soporte" />
+    <bpmn:exclusiveGateway id="Gateway_Nivel" name="¿Severidad?">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_N1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_N2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Resolver_N1" name="Responder Duda Logística">
+      <bpmn:incoming>Flow_N1</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:intermediateCatchEvent id="Event_Timer_SLA" name="SLA 24 Hrs">
+      <bpmn:outgoing>Flow_Alerta</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0kxnfp5" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sendTask id="Task_Alerta_Gerencia" name="Escalar a Gerencia">
+      <bpmn:incoming>Flow_Alerta</bpmn:incoming>
+      <bpmn:outgoing>Flow_1oht6mj</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="Event_1d9qve4" name="Caso Escalado">
+      <bpmn:incoming>Flow_1oht6mj</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1oht6mj" sourceRef="Task_Alerta_Gerencia" targetRef="Event_1d9qve4" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Tickets">
+      <bpmndi:BPMNShape id="Participant_Tickets_di" bpmnElement="Participant_Tickets" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1400" height="520" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Finanzas_di" bpmnElement="Lane_Finanzas" isHorizontal="true">
+        <dc:Bounds x="190" y="470" width="1370" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Soporte_di" bpmnElement="Lane_Soporte" isHorizontal="true">
+        <dc:Bounds x="190" y="340" width="1370" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_IA_di" bpmnElement="Lane_IA" isHorizontal="true">
+        <dc:Bounds x="190" y="200" width="1370" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Cliente_di" bpmnElement="Lane_Cliente" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1370" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Start_Ticket_di" bpmnElement="Event_Start_Ticket">
+        <dc:Bounds x="240" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="223" y="163" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NLP_di" bpmnElement="Task_NLP">
+        <dc:Bounds x="320" y="230" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Encuesta_di" bpmnElement="Task_Encuesta">
+        <dc:Bounds x="1270" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_End_Ticket_di" bpmnElement="Event_End_Ticket">
+        <dc:Bounds x="1462" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1441" y="163" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Notificar_Cliente_di" bpmnElement="Task_Notificar_Cliente">
+        <dc:Bounds x="1270" y="230" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Registrar_SLA_di" bpmnElement="Task_Registrar_SLA">
+        <dc:Bounds x="1090" y="230" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Compensacion_di" bpmnElement="Task_Compensacion">
+        <dc:Bounds x="1110" y="495" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Escalar_di" bpmnElement="Gateway_Escalar" isMarkerVisible="true">
+        <dc:Bounds x="855" y="375" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="836" y="351" width="88" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Resolver_N2_di" bpmnElement="Task_Resolver_N2">
+        <dc:Bounds x="830" y="495" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_0674tzp_di" bpmnElement="DataStoreReference_0674tzp">
+        <dc:Bounds x="975" y="245" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="963" y="302" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Nivel_di" bpmnElement="Gateway_Nivel" isMarkerVisible="true">
+        <dc:Bounds x="575" y="245" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="608" y="295" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Resolver_N1_di" bpmnElement="Task_Resolver_N1">
+        <dc:Bounds x="660" y="360" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0djr5ge_di" bpmnElement="Event_Timer_SLA">
+        <dc:Bounds x="252" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="242" y="563" width="57" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Alerta_Gerencia_di" bpmnElement="Task_Alerta_Gerencia">
+        <dc:Bounds x="350" y="495" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1d9qve4_di" bpmnElement="Event_1d9qve4">
+        <dc:Bounds x="512" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="493" y="560" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="276" y="140" />
+        <di:waypoint x="370" y="140" />
+        <di:waypoint x="370" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="420" y="270" />
+        <di:waypoint x="575" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N1_di" bpmnElement="Flow_N1">
+        <di:waypoint x="625" y="270" />
+        <di:waypoint x="710" y="270" />
+        <di:waypoint x="710" y="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="722" y="306" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N2_di" bpmnElement="Flow_N2">
+        <di:waypoint x="600" y="295" />
+        <di:waypoint x="600" y="535" />
+        <di:waypoint x="830" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="531" y="403" width="57" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="760" y="400" />
+        <di:waypoint x="855" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Escala_di" bpmnElement="Flow_Escala">
+        <di:waypoint x="880" y="425" />
+        <di:waypoint x="880" y="495" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="867" y="453" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Resuelto_N1_di" bpmnElement="Flow_Resuelto_N1">
+        <di:waypoint x="905" y="400" />
+        <di:waypoint x="1110" y="400" />
+        <di:waypoint x="1110" y="310" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1002" y="375" width="11" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Alerta_di" bpmnElement="Flow_Alerta">
+        <di:waypoint x="288" y="535" />
+        <di:waypoint x="350" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="930" y="535" />
+        <di:waypoint x="1110" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="1160" y="495" />
+        <di:waypoint x="1160" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="1190" y="270" />
+        <di:waypoint x="1270" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1320" y="230" />
+        <di:waypoint x="1320" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1370" y="140" />
+        <di:waypoint x="1462" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1oht6mj_di" bpmnElement="Flow_1oht6mj">
+        <di:waypoint x="450" y="535" />
+        <di:waypoint x="512" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0tpgr4w_di" bpmnElement="DataOutputAssociation_0tpgr4w">
+        <di:waypoint x="1090" y="270" />
+        <di:waypoint x="1025" y="270" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
